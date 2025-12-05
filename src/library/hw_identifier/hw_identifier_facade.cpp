@@ -14,6 +14,7 @@
 #include "../base/logger.h"
 #include "identification_strategy.hpp"
 #include "hw_identifier.hpp"
+#include "licensecc_properties.h"
 
 namespace license {
 namespace hw_identifier {
@@ -25,6 +26,20 @@ LCC_EVENT_TYPE HwIdentifierFacade::validate_pc_signature(const std::string& str_
 	try {
         HwIdentifier pc_id(str_code);
         LCC_API_HW_IDENTIFICATION_STRATEGY id_strategy = pc_id.get_identification_strategy();
+		unique_ptr<IdentificationStrategy> strategy = IdentificationStrategy::get_strategy(id_strategy);
+		result = strategy->validate_identifier(pc_id);
+	} catch (logic_error& e) {
+		LOG_ERROR("Error validating identifier %s: %s", str_code.c_str(), e.what());
+		((void)(e));
+	}
+	return result;
+}
+
+LCC_EVENT_TYPE HwIdentifierFacade::validate_only_mac_address(const std::string& str_code) {
+	LCC_EVENT_TYPE result = IDENTIFIERS_MISMATCH;
+	try {
+        HwIdentifier pc_id(str_code);
+        LCC_API_HW_IDENTIFICATION_STRATEGY const id_strategy = LCC_API_HW_IDENTIFICATION_STRATEGY::STRATEGY_ETHERNET;
 		unique_ptr<IdentificationStrategy> strategy = IdentificationStrategy::get_strategy(id_strategy);
 		result = strategy->validate_identifier(pc_id);
 	} catch (logic_error& e) {

@@ -23,6 +23,7 @@ private:
 	virtual ~HwIdentifierFacade(){};
 public:
 	static LCC_EVENT_TYPE validate_pc_signature(const std::string& str_code);
+	static LCC_EVENT_TYPE validate_only_mac_address(const std::string& str_code);
 	/**
 	 *
 	 * @throws logic_error if pc_identifier can't be generated.

@@ -61,6 +61,12 @@ FUNCTION_RETURN LicenseVerifier::verify_limits(const FullLicenseInfo& lic_info) 
 		m_event_registry.addEvent(event, lic_info.source);
 		is_valid = is_valid && (event == LICENSE_OK);
 	}
+	const auto locked_mac_address = lic_info.m_limits.find(PARAM_LOCKED_MAC_ADDRESS);
+	if (is_valid && locked_mac_address != lic_info.m_limits.end()) {
+		const LCC_EVENT_TYPE event = hw_identifier::HwIdentifierFacade::validate_only_mac_address(locked_mac_address->second);
+		m_event_registry.addEvent(event, lic_info.source);
+		is_valid = is_valid && (event == LICENSE_OK);
+	}
 	return is_valid ? FUNC_RET_OK : FUNC_RET_ERROR;
 }
 
