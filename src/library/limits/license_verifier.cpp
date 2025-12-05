@@ -93,6 +93,9 @@ LicenseInfo LicenseVerifier::toLicenseInfo(const FullLicenseInfo& fullLicInfo) c
 	const auto client_sig = fullLicInfo.m_limits.find(PARAM_CLIENT_SIGNATURE);
 	info.linked_to_pc = (client_sig != fullLicInfo.m_limits.end());
 
+	const auto locked_mac_address = fullLicInfo.m_limits.find(PARAM_LOCKED_MAC_ADDRESS);
+	info.linked_to_pc = (locked_mac_address != fullLicInfo.m_limits.end());
+
 	const auto proprietary_data = fullLicInfo.m_limits.find(PARAM_EXTRA_DATA);
 	if (proprietary_data != fullLicInfo.m_limits.end()) {
 		mstrlcpy(info.proprietary_data, proprietary_data->second.c_str(), sizeof(info.proprietary_data));

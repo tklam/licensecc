@@ -1,4 +1,3 @@
-#include <array>
 #include "identification_strategy.hpp"
 #include "default_strategy.hpp"
 #include "ethernet.hpp"

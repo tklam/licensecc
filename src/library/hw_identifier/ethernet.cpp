@@ -19,7 +19,7 @@ namespace license {
 namespace hw_identifier {
 using namespace std;
 
-static FUNCTION_RETURN generate_ethernet_pc_id(vector<array<uint8_t, HW_IDENTIFIER_PROPRIETARY_DATA>> &data,
+static FUNCTION_RETURN generate_ethernet_pc_id(vector<array<uint8_t, HW_IDENTIFIER_PROPRIETARY_DATA>>& data,
 											   const bool use_ip) {
 	vector<os::OsAdapterInfo> adapters;
 
@@ -31,12 +31,12 @@ static FUNCTION_RETURN generate_ethernet_pc_id(vector<array<uint8_t, HW_IDENTIFI
 		return FUNC_RET_NOT_AVAIL;
 	}
 
-	for (auto &it : adapters) {
+	for (auto& it : adapters) {
 		unsigned int k, data_len;
 		array<uint8_t, HW_IDENTIFIER_PROPRIETARY_DATA> identifier = {};
 		data_len = use_ip ? sizeof(os::OsAdapterInfo::ipv4_address) : sizeof(os::OsAdapterInfo::mac_address);
 		bool all_zero = true;
-		for (k = 0; k < data_len && all_zero;k++) {
+		for (k = 0; k < data_len && all_zero; k++) {
 			all_zero = all_zero && ((use_ip ? it.ipv4_address[k] : it.mac_address[k]) == 0);
 		}
 		if (all_zero) {
@@ -44,13 +44,12 @@ static FUNCTION_RETURN generate_ethernet_pc_id(vector<array<uint8_t, HW_IDENTIFI
 		}
 		for (k = 1; k < HW_IDENTIFIER_PROPRIETARY_DATA; k++) {
 			if ((k - 1) < data_len) {
-				identifier[k] =
-						use_ip ? it.ipv4_address[k - 1] : it.mac_address[k - 1];
+				identifier[k] = use_ip ? it.ipv4_address[k - 1] : it.mac_address[k - 1];
 			} else {
 				identifier[k] = 42;
 			}
 		}
-		//identifier[0] = identifier[0] & 0x1F;
+		// identifier[0] = identifier[0] & 0x1F;
 		identifier[0] = 0;
 		data.push_back(identifier);
 	}
@@ -72,7 +71,7 @@ std::vector<HwIdentifier> Ethernet::alternative_ids() const {
 	vector<HwIdentifier> identifiers;
 	if (result == FUNC_RET_OK) {
 		identifiers.reserve(data.size());
-		for (auto &it : data) {
+		for (auto& it : data) {
 			HwIdentifier pc_id;
 			pc_id.set_identification_strategy(identification_strategy());
 			pc_id.set_data(it);
@@ -80,6 +79,12 @@ std::vector<HwIdentifier> Ethernet::alternative_ids() const {
 		}
 	}
 	return identifiers;
+}
+
+std::vector<array<uint8_t, HW_IDENTIFIER_PROPRIETARY_DATA>> Ethernet::non_zero_mac_addresses() {
+	vector<array<uint8_t, HW_IDENTIFIER_PROPRIETARY_DATA>> data;
+	generate_ethernet_pc_id(data, false);
+	return data;
 }
 
 }  // namespace hw_identifier

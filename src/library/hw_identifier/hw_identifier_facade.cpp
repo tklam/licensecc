@@ -12,6 +12,7 @@
 
 #include "../base/base.h"
 #include "../base/logger.h"
+#include "ethernet.hpp"
 #include "identification_strategy.hpp"
 #include "hw_identifier.hpp"
 #include "licensecc_properties.h"
@@ -21,11 +22,18 @@ namespace hw_identifier {
 
 using namespace std;
 
+static uint8_t hex2int(char ch) {
+	if (ch >= '0' && ch <= '9') return ch - '0';
+	if (ch >= 'A' && ch <= 'F') return ch - 'A' + 10;
+	if (ch >= 'a' && ch <= 'f') return ch - 'a' + 10;
+	return 0;  // Not reachable
+}
+
 LCC_EVENT_TYPE HwIdentifierFacade::validate_pc_signature(const std::string& str_code) {
 	LCC_EVENT_TYPE result = IDENTIFIERS_MISMATCH;
 	try {
-        HwIdentifier pc_id(str_code);
-        LCC_API_HW_IDENTIFICATION_STRATEGY id_strategy = pc_id.get_identification_strategy();
+		HwIdentifier pc_id(str_code);
+		LCC_API_HW_IDENTIFICATION_STRATEGY id_strategy = pc_id.get_identification_strategy();
 		unique_ptr<IdentificationStrategy> strategy = IdentificationStrategy::get_strategy(id_strategy);
 		result = strategy->validate_identifier(pc_id);
 	} catch (logic_error& e) {
@@ -37,15 +45,24 @@ LCC_EVENT_TYPE HwIdentifierFacade::validate_pc_signature(const std::string& str_
 
 LCC_EVENT_TYPE HwIdentifierFacade::validate_only_mac_address(const std::string& str_code) {
 	LCC_EVENT_TYPE result = IDENTIFIERS_MISMATCH;
-	try {
-        HwIdentifier pc_id(str_code);
-        LCC_API_HW_IDENTIFICATION_STRATEGY const id_strategy = LCC_API_HW_IDENTIFICATION_STRATEGY::STRATEGY_ETHERNET;
-		unique_ptr<IdentificationStrategy> strategy = IdentificationStrategy::get_strategy(id_strategy);
-		result = strategy->validate_identifier(pc_id);
-	} catch (logic_error& e) {
-		LOG_ERROR("Error validating identifier %s: %s", str_code.c_str(), e.what());
-		((void)(e));
+	auto mac_addresses = license::hw_identifier::Ethernet::non_zero_mac_addresses();
+
+	size_t str_code_index = 0;
+	for (auto& mac_addr : mac_addresses) {
+		for (size_t i = 1; i < HW_IDENTIFIER_PROPRIETARY_DATA; ++i) {
+			uint8_t first_str_code_value = hex2int(str_code.at(str_code_index));
+			uint8_t second_str_code_value = hex2int(str_code.at(str_code_index + 1));
+			uint8_t cur_8bit = first_str_code_value << 4 | second_str_code_value;
+
+			if (mac_addr[i] != cur_8bit) {
+				return result;	// Mismatch
+			}
+
+			str_code_index += 3;
+		}
 	}
+
+	result = LCC_EVENT_TYPE::LICENSE_OK;
 	return result;
 }
 
