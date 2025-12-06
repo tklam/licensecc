@@ -46,23 +46,27 @@ LCC_EVENT_TYPE HwIdentifierFacade::validate_pc_signature(const std::string& str_
 LCC_EVENT_TYPE HwIdentifierFacade::validate_only_mac_address(const std::string& str_code) {
 	LCC_EVENT_TYPE result = IDENTIFIERS_MISMATCH;
 	auto mac_addresses = license::hw_identifier::Ethernet::non_zero_mac_addresses();
-
-	size_t str_code_index = 0;
+	bool any_valid = false;
 	for (auto& mac_addr : mac_addresses) {
+		size_t str_code_index = 0;
+		bool cur_valid = true;
 		for (size_t i = 1; i < HW_IDENTIFIER_PROPRIETARY_DATA; ++i) {
 			uint8_t first_str_code_value = hex2int(str_code.at(str_code_index));
 			uint8_t second_str_code_value = hex2int(str_code.at(str_code_index + 1));
 			uint8_t cur_8bit = first_str_code_value << 4 | second_str_code_value;
 
 			if (mac_addr[i] != cur_8bit) {
-				return result;	// Mismatch
+				cur_valid = false;	// Mismatch
+				break;
 			}
 
 			str_code_index += 3;
 		}
+		any_valid |= cur_valid;
 	}
-
-	result = LCC_EVENT_TYPE::LICENSE_OK;
+	if (any_valid) {
+		result = LCC_EVENT_TYPE::LICENSE_OK;
+	}
 	return result;
 }
 
